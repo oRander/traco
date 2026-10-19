@@ -13,3 +13,13 @@ function containsShape(s,p){if(s.hidden)return false;if(s.type==='rect')return p
 const downBeforeBucket=svg.onpointerdown;svg.onpointerdown=function(e){if(tool!=='bucket')return downBeforeBucket(e);if(e.button!==0)return;e.preventDefault();let p=pos(e),s=[...shapes].reverse().find(s=>containsShape(s,p));if(!s){toast('Clique dentro de um círculo, retângulo, triângulo ou traço fechado.');return}checkpoint();if(e.altKey){delete s.fillColor;s.fill=false}else s.fillColor=color;selected=null;render();persist();toast(e.altKey?'Preenchimento removido':'Forma preenchida. Desfazer recupera a cor anterior.')};
 const setToolBeforeBucket=setTool;setTool=function(t){if(t==='bucket')selected=null;setToolBeforeBucket(t);if(t==='bucket'){svg.style.cursor='cell';$('status').textContent='Clique dentro de uma forma • Alt + clique remove a tinta'}};
 render();
+let autoCorrect=true;
+try{autoCorrect=localStorage.getItem('traco-auto-correct')!=='false'}catch{}
+const correctionLabel=document.createElement('label');correctionLabel.className='auto-correction';
+const correctionInput=document.createElement('input');correctionInput.type='checkbox';correctionInput.id='auto-correct';correctionInput.checked=autoCorrect;
+const correctionText=document.createElement('span');correctionText.textContent='Corrigir desenhos';correctionLabel.append(correctionInput,correctionText);correctionLabel.title='Ajustar formas desenhadas à mão livre automaticamente';$('tools').after(correctionLabel);
+const recognizeWithCorrection=recognize;recognize=function(s){return autoCorrect?recognizeWithCorrection(s):s};
+function correctionStatus(){if(tool==='pen')$('status').textContent=autoCorrect?'✦ Correção automática ativa':'Traço livre • Correção desligada';document.querySelector('.tip p').textContent=autoCorrect?'Formas desenhadas à mão são ajustadas automaticamente.':'Correção desligada. Seus rabiscos ficam exatamente como você desenhar.'}
+const renderBeforeCorrection=render;render=function(){renderBeforeCorrection();correctionStatus()};
+correctionInput.onchange=()=>{autoCorrect=correctionInput.checked;try{localStorage.setItem('traco-auto-correct',String(autoCorrect))}catch{}correctionStatus();toast(autoCorrect?'Correção automática ativada':'Correção desligada. Desenho à mão livre preservado.')};
+render();
